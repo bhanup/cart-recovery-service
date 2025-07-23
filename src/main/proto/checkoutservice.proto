@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package notifications;
+
+import "google/protobuf/timestamp.proto";
+
+// Represents a monetary value
+message Money {
+    // e.g., USD, INR
+    string currency_code = 1;
+    // the amount
+    double amount = 2;
+}
+
+// Represents the cart item
+message CartItem {
+    // id of the product. The details can be fetched from
+    // item service
+    string product_id = 1;
+    // Total quantity of product added
+    int32 quantity = 2;
+    // price of the item
+    Money price_per_unit = 3;
+}
+
+// Represents the cart action by the user
+enum CartAction {
+    CART_UNKNOWN = 0;
+    ITEM_ADDED = 1;
+    ITEM_REMOVED = 2;
+    ITEM_UPDATED = 3;
+    CART_CLEARED = 4;
+}
+
+// Represents a user or session
+message UserIdentifier {
+    enum IdentifierType {
+        UNKNOWN = 0;
+        USER_ID = 1;
+        SESSION_ID = 2;
+    }
+
+    IdentifierType type = 1;
+    string id = 2;
+}
+
+// Enum for payment status
+enum PaymentStatus {
+    PAYMENT_UNKNOWN = 0;
+    PAYMENT_PENDING = 1;
+    PAYMENT_SUCCESS = 2;
+    PAYMENT_FAILED = 3;
+    PAYMENT_CANCELLED = 4;
+    PAYMENT_REFUNDED = 5;
+}
+
+// Represents the changes to the cart event
+message CartEvent {
+    string cart_id = 1;
+
+    // Unified user/session identifier
+    UserIdentifier user = 2;
+
+    // Type of cart action
+    CartAction action = 3;
+
+    // Timestamp of the event
+    google.protobuf.Timestamp event_time = 4;
+
+    // Items involved in the action
+    repeated CartItem items = 5;
+
+    // Optional: source of traffic (e.g., organic, ad, email)
+    string source = 6;
+}
+
+// Represents the checkout event
+message CheckoutEvent {
+    // Unique identifier for the checkout. Serves as idempotent key
+    string checkout_id = 1;
+
+    // Unified user/session identifier
+    UserIdentifier user = 2;
+
+    // Cart id to reference the cart for which checkout is triggered
+    string cart_id = 3;
+
+    // Total checkout value
+    Money total_value = 4;
+
+    // Timestamp of checkout initiation
+    google.protobuf.Timestamp checkout_time = 5;
+
+    // Payment status of the checkout
+    PaymentStatus payment_status = 6;
+}
+
+message PurchaseIntentEvent {
+    oneof event {
+        CartEvent cart_event = 1;
+        CheckoutEvent checkout_event = 2;
+    }
+}
