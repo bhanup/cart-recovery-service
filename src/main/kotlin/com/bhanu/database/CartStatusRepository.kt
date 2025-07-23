@@ -7,7 +7,9 @@ import jakarta.inject.Inject
 import java.util.UUID
 import io.smallrye.mutiny.Uni
 import io.vertx.mutiny.sqlclient.Pool
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @ApplicationScoped
 class CartStatusRepository {
@@ -57,6 +59,54 @@ class CartStatusRepository {
                 if (rowSet.iterator().hasNext()) {
                     rowSet.iterator().next().toCartStatus()
                 } else null
+            }
+    }
+
+    fun findStaleCarts(seconds: Long): Uni<List<CartStatus>> {
+        val cutoff = OffsetDateTime.ofInstant(Instant.now().minusSeconds(seconds), ZoneOffset.UTC)
+
+        return client.preparedQuery("""
+            SELECT * FROM cart_status
+            WHERE updated_timestamp < $1
+        """).execute(Tuple.of(cutoff))
+            .onItem().transform { rowSet ->
+                rowSet.map { row -> row.toCartStatus() }
+            }
+    }
+
+    fun update(cart: CartStatus): Uni<CartStatus> {
+        val query = """
+        UPDATE cart_status SET
+            user_id = $1,
+            session_id = $2,
+            cart_items = $3,
+            updated_timestamp = $4,
+            status = $5,
+            notification_id = $6,
+            source = $7,
+            experiment_variant = $8,
+            expires_at = $9
+        WHERE cart_id = $10
+        RETURNING *
+    """.trimIndent()
+
+        val tuple = Tuple.tuple()
+            .addString(cart.userId)
+            .addString(cart.sessionId)
+            .addString(cart.cartItems)
+            .addTemporal(cart.updatedTimestamp)
+            .addString(cart.status)
+            .addString(cart.notificationId)
+            .addString(cart.source)
+            .addString(cart.experimentVariant)
+            .addTemporal(cart.expiresAt)
+            .addUUID(cart.cartId)
+
+        return client.preparedQuery(query)
+            .execute(tuple)
+            .onItem().transform { rowSet ->
+                val row = rowSet.iterator().next()
+                row.toCartStatus() // assumes you have a Row mapper already
             }
     }
 

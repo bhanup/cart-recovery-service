@@ -12,9 +12,9 @@ class EmitterService {
     @Inject
     @Channel("purchase-intent")
     @Broadcast
-    lateinit var emitter: Emitter<String>
+    lateinit var emitter: Emitter<ByteArray>
 
-    fun emit(message: String) {
+    fun emit(message: ByteArray) {
         emitter.send(message)
     }
 }
