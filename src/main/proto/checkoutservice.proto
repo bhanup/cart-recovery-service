@@ -101,3 +101,24 @@ message PurchaseIntentEvent {
         CheckoutEvent checkout_event = 2;
     }
 }
+
+// Generic Cart response for create or update
+message CreateOrUpdateCartResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// Generic Checkout update response
+message CheckoutResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// gRPC for checkout service
+service CheckoutService {
+    // create checkout event
+    rpc CreateOrUpdateCart(CartEvent) returns (CreateOrUpdateCartResponse);
+
+    // Create or update checkout
+    rpc CreateOrUpateCheckout(CheckoutEvent) returns (CheckoutResponse);
+}
