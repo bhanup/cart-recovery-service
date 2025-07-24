@@ -4,6 +4,70 @@ This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
 
+## System Requirement
+* You need a running docker instance. This package creates a postgresql, kafka and the service running instance
+* quarkus CLI. To start the service you can just run `quarkus dev`. This should bring up the service as well as required containers in docker
+* grpcurl: To send a request to the Checkout Service manually grpcurl can be used. Sample request
+```
+grpcurl -plaintext \
+  -d '{
+    "cart_id": "885e55cb-6c0d-4cfb-bf78-552bafbe5b39",
+    "user": {
+      "type": "USER_ID",
+      "id": "user-456"
+    },
+    "action": "ITEM_ADDED",
+    "event_time": "2025-07-24T03:01:00.123456789Z",
+    "items": [
+      {
+        "product_id": "prod-789",
+        "quantity": 2,
+        "price_per_unit": {
+          "currency_code": "INR",
+          "amount": 149.50
+        }
+      }
+    ],
+    "source": "email"
+  }' \
+  localhost:9000 notifications.CheckoutService/CreateOrUpdateCart`
+```
+
+```
+grpcurl -plaintext   -d '{
+    "checkout_id": "885e55cb-6c0d-4cfb-bf78-552bafbe5b39",
+    "user": {
+      "type": "USER_ID",
+      "id": "user-123"
+    },
+    "cart_id": "885e55cb-6c0d-4cfb-bf78-552bafbe5b38",
+    "total_value": {
+      "currency_code": "INR",
+      "amount": 399.99
+    },
+    "checkout_time": "2023-10-27T10:30:00.123456789Z",
+    "payment_status": "PAYMENT_PENDING"
+  }'   localhost:9000 notifications.CheckoutService/CreateOrUpateCheckout
+```
+
+## Package Directory Overview
+`proto` : The proto folder contains the protobuf definition for the messages and CheckoutService
+
+`resource/db/migration`: The folder has the SQL query to bootstrap the postgresql instance. If the table and indexes
+are not created Flywheel will use this query to create the database.
+
+
+`checkout`: Contains the implementation for the checkout service. This implements the grpc methods for accepting 
+the cart and checkout changes and publishes the changes to the Kafka topic
+
+`cartrecovery`: Contains the implementation for the CartProcessor. It consumes the messages from the kafka topic for
+the purchaseIntent event and maintains the cart status.
+
+`database`: Contains the repository class to operate on the table and the cart status DBO
+
+`scheduler`: Contains the implementation for the identification of the abandoned cart. For the abandoned cart it
+prints the cart status as mock for notification scheduling and marks the status of the cart to notified.
+
 ## Running the application in dev mode
 
 You can run your application in dev mode that enables live coding using:
