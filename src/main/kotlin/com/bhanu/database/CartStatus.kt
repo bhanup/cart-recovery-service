@@ -1,6 +1,5 @@
 package com.bhanu.database
 
-import io.vertx.core.json.Json
 import notifications.Checkoutservice
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -22,19 +21,37 @@ data class CartStatus(
 )
 
 fun Checkoutservice.CartEvent.toCartStatus(): CartStatus {
-    val now = OffsetDateTime.now()
+    val eventTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(eventTime.seconds, eventTime.nanos.toLong()), ZoneOffset.UTC)
 
     return CartStatus(
         cartId = UUID.fromString(cartId),
         userId = user.takeIf { it.type == Checkoutservice.UserIdentifier.IdentifierType.USER_ID }?.id ?: "",
         sessionId = user.takeIf { it.type == Checkoutservice.UserIdentifier.IdentifierType.SESSION_ID }?.id ?: "",
-        cartItems = Json.encode(itemsList), // optional: serialize item list to string
-        updatedTimestamp = OffsetDateTime.ofInstant(Instant.ofEpochSecond(eventTime.seconds, eventTime.nanos.toLong()), ZoneOffset.UTC),
+        cartItems = itemsList.toString(), // optional: serialize item list to string
+        updatedTimestamp = eventTime,
         status = action.name,
         notificationId = null,
         source = source,
         experimentVariant = null,
-        createdAt = now,
-        expiresAt = now.plusSeconds(900) // default TTL (15 min), configurable
+        createdAt = eventTime,
+        expiresAt = eventTime.plusWeeks(1) // default TTL (15 min), configurable
+    )
+}
+
+fun Checkoutservice.CheckoutEvent.toCartStatus(): CartStatus {
+    val eventTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(checkoutTime.seconds, checkoutTime.nanos.toLong()), ZoneOffset.UTC)
+
+    return CartStatus(
+        cartId = UUID.fromString(cartId),
+        userId = user.takeIf { it.type == Checkoutservice.UserIdentifier.IdentifierType.USER_ID }?.id ?: "",
+        sessionId = user.takeIf { it.type == Checkoutservice.UserIdentifier.IdentifierType.SESSION_ID }?.id ?: "",
+        cartItems = "[]", // Optional: replace with reconstructed items if available
+        updatedTimestamp = eventTime,
+        status = paymentStatus.name, // e.g., "PAYMENT_PENDING", "PAYMENT_SUCCESS"
+        notificationId = null,
+        source = "", // If you capture traffic source earlier, inject it here
+        experimentVariant = null,
+        createdAt = eventTime,
+        expiresAt = eventTime.plusWeeks(1) // Default expiry: 15 minutes from now
     )
 }

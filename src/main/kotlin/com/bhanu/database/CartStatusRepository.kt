@@ -68,6 +68,7 @@ class CartStatusRepository {
         return client.preparedQuery("""
             SELECT * FROM cart_status
             WHERE updated_timestamp < $1
+            AND status NOT IN ('NOTIFICATION_TRIGGERED', 'PAYMENT_PENDING', 'PAYMENT_SUCCESS', 'PAYMENT_FAILED', 'PAYMENT_CANCELLED', 'PAYMENT_REFUNDED')
         """).execute(Tuple.of(cutoff))
             .onItem().transform { rowSet ->
                 rowSet.map { row -> row.toCartStatus() }
@@ -107,6 +108,29 @@ class CartStatusRepository {
             .onItem().transform { rowSet ->
                 val row = rowSet.iterator().next()
                 row.toCartStatus() // assumes you have a Row mapper already
+            }
+    }
+
+    fun markNotificationTriggered(cartId: UUID): Uni<CartStatus> {
+        val query = """
+        UPDATE cart_status
+        SET status = $1, updated_timestamp = $2
+        WHERE cart_id = $3
+        RETURNING *
+    """.trimIndent()
+
+        val now = OffsetDateTime.now(ZoneOffset.UTC)
+
+        val tuple = Tuple.tuple()
+            .addString("NOTIFICATION_TRIGGERED")
+            .addOffsetDateTime(now)
+            .addUUID(cartId)
+
+        return client.preparedQuery(query)
+            .execute(tuple)
+            .onItem().transform { rowSet ->
+                val row = rowSet.iterator().next()
+                row.toCartStatus()
             }
     }
 

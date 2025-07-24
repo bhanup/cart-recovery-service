@@ -70,16 +70,16 @@ Easily start your REST Web Services
 [Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
 
 Sample Payload for running the grpCurl
-```
+````
 grpcurl -plaintext \
   -d '{
-    "cart_id": "cart-123",
+    "cart_id": "885e55cb-6c0d-4cfb-bf78-552bafbe5b39",
     "user": {
       "type": "USER_ID",
       "id": "user-456"
     },
     "action": "ITEM_ADDED",
-    "event_time": "2023-10-27T10:30:00.123456789Z",
+    "event_time": "2025-07-24T03:01:00.123456789Z",
     "items": [
       {
         "product_id": "prod-789",
@@ -92,17 +92,17 @@ grpcurl -plaintext \
     ],
     "source": "email"
   }' \
-  localhost:9000 notifications.CheckoutService/CreateOrUpdateCart
+  localhost:9000 notifications.CheckoutService/CreateOrUpdateCart`
 ```
 
 ```
 grpcurl -plaintext   -d '{
-    "checkout_id": "checkout-xyz",
+    "checkout_id": "885e55cb-6c0d-4cfb-bf78-552bafbe5b39",
     "user": {
       "type": "USER_ID",
       "id": "user-123"
     },
-    "cart_id": "cart-456",
+    "cart_id": "885e55cb-6c0d-4cfb-bf78-552bafbe5b38",
     "total_value": {
       "currency_code": "INR",
       "amount": 399.99
